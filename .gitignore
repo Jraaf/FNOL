@@ -427,3 +427,9 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Project additions
+backend/**/App_Data/
+backend/publish/
+frontend/dist/
+frontend/.angular/
