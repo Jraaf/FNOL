@@ -3,6 +3,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Local secret overrides — connection strings, storage account keys, etc.
+# Templates with placeholder values are checked in as *.example files.
+appsettings.Local.json
+appsettings.*.Local.json
+appsettings.Production.json
+appsettings.Staging.json
+
 # User-specific files
 *.rsuser
 *.suo
