@@ -1,0 +1,19 @@
+<mat-toolbar color="primary">
+  <span class="brand">DICEUS Claims</span>
+  <a mat-button routerLink="/claims" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+  <a mat-button routerLink="/claims/new" routerLinkActive="active">Log New Claim</a>
+  <span class="spacer"></span>
+  <button mat-button [matMenuTriggerFor]="userMenu">
+    <mat-icon>person</mat-icon>
+    {{ auth.current().userName }} ({{ auth.current().role }})
+  </button>
+  <mat-menu #userMenu="matMenu">
+    @for (r of roles; track r) {
+      <button mat-menu-item (click)="setRole(r)">Switch to {{ r }}</button>
+    }
+  </mat-menu>
+</mat-toolbar>
+
+<main class="page">
+  <router-outlet />
+</main>

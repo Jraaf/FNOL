@@ -1,0 +1,67 @@
+.step-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.row mat-form-field { flex: 1 1 220px; }
+.full { width: 100%; }
+
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fafafa;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.warn {
+  background: #fff3cd;
+  color: #856404;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.band {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.band-auto { background: #c8e6c9; color: #1b5e20; }
+.band-supervisor { background: #fff3cd; color: #856404; }
+.band-manager { background: #ffcdd2; color: #b71c1c; }
+.band-invalid { background: #ffe0b2; color: #e65100; }
+
+.review {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.band-card { margin-bottom: 16px; }

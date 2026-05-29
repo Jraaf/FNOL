@@ -1,0 +1,26 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.subtitle { color: #555; margin-top: 4px; }
+
+.filters .filter-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+}
+
+.claims-table { width: 100%; }
+.clickable { cursor: pointer; }
+.right { text-align: right; }
+.empty { padding: 24px; text-align: center; color: #777; }
+.loading { display: flex; justify-content: center; padding: 24px; }

@@ -1,0 +1,12 @@
+{
+  "_help": "Copy this file to appsettings.Local.json and fill in the real values. This file is checked into git as a template; appsettings.Local.json is gitignored.",
+
+  "ConnectionStrings": {
+    "ClaimsDb": "Server=(localdb)\\MSSQLLocalDB;Database=ClaimsModule;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true;",
+    "Hangfire": ""
+  },
+
+  "Storage": {
+    "AzureConnectionString": "DefaultEndpointsProtocol=https;AccountName=<account>;AccountKey=<key>;EndpointSuffix=core.windows.net"
+  }
+}

@@ -1,0 +1,222 @@
+@if (claim(); as c) {
+  @if (justCreatedNumber(); as createdNum) {
+    <div class="success-banner" role="status">
+      <mat-icon>check_circle</mat-icon>
+      <div class="text">
+        <strong>Claim {{ createdNum }} created.</strong>
+        <span>You are viewing the new claim's detail screen.</span>
+        @if (justCreatedOutsidePolicy()) {
+          <span class="warn"> Loss date was outside the policy period — a BR-C-02 warning has been recorded in the audit log.</span>
+        }
+      </div>
+      <button mat-icon-button aria-label="Dismiss" (click)="dismissJustCreated()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <header class="header">
+    <div>
+      <h1>{{ c.claimNumber }}</h1>
+      <div class="meta">
+        <app-status-badge [status]="c.status" />
+        <span>Policy {{ c.policyNumber }}</span>
+        <span>Loss: {{ c.lossDate | date:'mediumDate' }}</span>
+        <span>Cause: {{ c.causeOfLossCode }}</span>
+        @if (c.assignedHandlerName) { <span>Handler: {{ c.assignedHandlerName }}</span> }
+        @if (c.lossDateOutsidePolicyPeriod) {
+          <span class="warn">⚠ Loss date outside policy period (BR-C-02)</span>
+        }
+      </div>
+    </div>
+    <div class="actions">
+      <button mat-stroked-button [matMenuTriggerFor]="statusMenu" [disabled]="!allowedTransitions().length">
+        <mat-icon>swap_horiz</mat-icon> Change Status
+      </button>
+      <mat-menu #statusMenu="matMenu">
+        @for (t of allowedTransitions(); track t.to) {
+          <button mat-menu-item (click)="transition(t.to)">
+            → {{ statusName(t.to) }}
+            @if (t.requiredPermission) { <small>(requires {{ t.requiredPermission }})</small> }
+          </button>
+        }
+      </mat-menu>
+      <a mat-button routerLink="/claims">Back to list</a>
+    </div>
+  </header>
+
+  <mat-tab-group>
+    <mat-tab label="Overview">
+      <div class="tab-content overview-grid">
+        <mat-card>
+          <h3>Loss Event</h3>
+          <p><strong>Date:</strong> {{ c.lossDate | date:'medium' }}</p>
+          <p><strong>Location:</strong> {{ c.lossLocation }}</p>
+          <p><strong>Description:</strong> {{ c.lossDescription }}</p>
+        </mat-card>
+        <mat-card>
+          <h3>Policy & Client</h3>
+          <p><strong>Policy:</strong> {{ c.policyNumber }}</p>
+          <p><strong>Client:</strong> {{ c.clientName }}</p>
+          <p><strong>Reported:</strong> {{ c.reportedAt | date:'medium' }}</p>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Parties ({{ c.parties.length }})">
+      <div class="tab-content">
+        <table mat-table [dataSource]="c.parties">
+          <ng-container matColumnDef="partyType">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let p">{{ partyTypeName(p.partyType) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let p">{{ p.firstName }} {{ p.lastName }}</td>
+          </ng-container>
+          <ng-container matColumnDef="contact">
+            <th mat-header-cell *matHeaderCellDef>Contact</th>
+            <td mat-cell *matCellDef="let p">{{ p.contactEmail || p.contactPhone || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="address">
+            <th mat-header-cell *matHeaderCellDef>Address</th>
+            <td mat-cell *matCellDef="let p">{{ p.addressLine || '—' }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['partyType', 'name', 'contact', 'address']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['partyType', 'name', 'contact', 'address']"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Reserves ({{ c.reserves.length }})">
+      <div class="tab-content">
+        <mat-card class="open-reserve">
+          <h3>Add reserve</h3>
+          <div class="row">
+            <mat-form-field appearance="outline">
+              <mat-label>Reserve type</mat-label>
+              <mat-select [(ngModel)]="newReserveType">
+                @for (r of reserveTypes; track r.value) {
+                  <mat-option [value]="r.value">{{ r.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Amount</mat-label>
+              <input matInput type="number" min="0" step="100" [(ngModel)]="newReserveAmount">
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="openReserve()"
+                    [disabled]="newReserveAmount <= 0">Open</button>
+          </div>
+        </mat-card>
+
+        <table mat-table [dataSource]="c.reserves" class="reserves">
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let r">{{ reserveTypeName(r.componentType) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef class="right">Amount</th>
+            <td mat-cell *matCellDef="let r" class="right">
+              {{ r.currentAmount | currency:'USD':'symbol':'1.2-2' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Approval</th>
+            <td mat-cell *matCellDef="let r">{{ approvalStatusName(r.approvalStatus) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="seq">
+            <th mat-header-cell *matHeaderCellDef>Seq</th>
+            <td mat-cell *matCellDef="let r">{{ r.changeSequence }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="right">Actions</th>
+            <td mat-cell *matCellDef="let r" class="right">
+              @if (canApproveReserve(r)) {
+                <button mat-stroked-button color="primary" (click)="approveReserve(r)">Approve</button>
+              }
+              @if (canRejectReserve(r)) {
+                <button mat-stroked-button color="warn" (click)="rejectReserve(r)">Reject</button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['type', 'amount', 'status', 'seq', 'actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['type', 'amount', 'status', 'seq', 'actions']"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Documents ({{ documents().length }})">
+      <div class="tab-content">
+        <div class="row">
+          <mat-form-field appearance="outline">
+            <mat-label>Document type</mat-label>
+            <mat-select [(ngModel)]="uploadDocumentType">
+              @for (d of documentTypes; track d.value) {
+                <mat-option [value]="d.value">{{ d.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <label class="upload-btn">
+            <input type="file" hidden (change)="onFileSelected($event)">
+            <span mat-flat-button color="primary">
+              <mat-icon>upload</mat-icon> Upload
+            </span>
+          </label>
+          @if (uploading()) { <mat-spinner diameter="20" /> }
+        </div>
+
+        <table mat-table [dataSource]="documents()">
+          <ng-container matColumnDef="fileName">
+            <th mat-header-cell *matHeaderCellDef>File</th>
+            <td mat-cell *matCellDef="let d">
+              <a [href]="d.downloadUrl" target="_blank" rel="noopener">{{ d.fileName }}</a>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef>Type</th>
+            <td mat-cell *matCellDef="let d">{{ d.documentType }}</td>
+          </ng-container>
+          <ng-container matColumnDef="uploaded">
+            <th mat-header-cell *matHeaderCellDef>Uploaded</th>
+            <td mat-cell *matCellDef="let d">{{ d.uploadedAt | date:'medium' }} by {{ d.uploadedBy }}</td>
+          </ng-container>
+          <ng-container matColumnDef="size">
+            <th mat-header-cell *matHeaderCellDef class="right">Size</th>
+            <td mat-cell *matCellDef="let d" class="right">{{ d.sizeBytes }} bytes</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['fileName', 'type', 'uploaded', 'size']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['fileName', 'type', 'uploaded', 'size']"></tr>
+        </table>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Audit Log ({{ audit().length }})">
+      <div class="tab-content">
+        <table mat-table [dataSource]="audit()">
+          <ng-container matColumnDef="when">
+            <th mat-header-cell *matHeaderCellDef>When</th>
+            <td mat-cell *matCellDef="let a">{{ a.occurredAt | date:'medium' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="event">
+            <th mat-header-cell *matHeaderCellDef>Event</th>
+            <td mat-cell *matCellDef="let a"><code>{{ a.eventType }}</code></td>
+          </ng-container>
+          <ng-container matColumnDef="user">
+            <th mat-header-cell *matHeaderCellDef>By</th>
+            <td mat-cell *matCellDef="let a">{{ a.triggeredBy }}</td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let a">{{ a.description }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['when', 'event', 'user', 'description']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['when', 'event', 'user', 'description']"></tr>
+        </table>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+} @else {
+  <div class="loading"><mat-spinner diameter="32" /></div>
+}
