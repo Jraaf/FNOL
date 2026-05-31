@@ -1,7 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import {
   CauseCode,
   ClaimAuditEntryDto,
@@ -39,7 +38,12 @@ export interface ClaimStatusDescriptor {
 @Injectable({ providedIn: 'root' })
 export class ClaimsApiService {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiBaseUrl;
+  // Relative base: the browser resolves it against whatever origin served the SPA.
+  // In production the Angular bundle is served same-origin from the API container's
+  // wwwroot, so '/api' always points at the right host — no per-deployment/revision
+  // URL to configure. For local `ng serve` (port 4200), proxy.conf.json forwards
+  // '/api' to the API on http://localhost:5000.
+  private readonly base = '/api';
 
   listClaims(filters: ListClaimsFilters): Observable<PagedResult<ClaimSummary>> {
     let params = new HttpParams();
