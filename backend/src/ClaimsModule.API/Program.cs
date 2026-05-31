@@ -9,6 +9,17 @@ using ClaimsModule.Persistence.Seeding;
 using Hangfire;
 using Microsoft.OpenApi.Models;
 
+// Load a .env file (if present) into process environment variables BEFORE the host's
+// configuration is built, so the default Environment Variables provider folds them in.
+// A single .env can therefore drive local `dotnet run`, local Docker, and Azure.
+//   - NoClobber():   real environment variables (e.g. those injected by Azure Container
+//                    Apps / docker --env-file) always win over the file, so platform
+//                    settings are never silently overridden by a stray local .env.
+//   - TraversePath(): walk up from the working directory so the repo-root .env is found
+//                    regardless of where the app is launched from.
+// The file is optional and is NOT part of the published image (gitignored).
+DotNetEnv.Env.NoClobber().TraversePath().Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Layer in appsettings.Local.json (gitignored) and appsettings.{Env}.Local.json so secrets
